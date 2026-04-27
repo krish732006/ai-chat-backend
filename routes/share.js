@@ -13,7 +13,15 @@ router.post("/", async (req, res) => {
       messages,
     });
 
-    res.json({ shareId: newShare._id });
+    // 🔥 IMPORTANT: backend live URL
+    const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+
+    const fullLink = `${BASE_URL}/api/share/${newShare._id}`;
+
+    res.json({
+      shareId: newShare._id,
+      url: fullLink, // ✅ direct usable link
+    });
   } catch (err) {
     res.status(500).json({ error: "Failed to create share link" });
   }
