@@ -12,7 +12,7 @@ passport.use(
       callbackURL:
         "https://ai-chat-backend-5-5716.onrender.com/api/auth/google/callback",
       passReqToCallback: true,
-      proxy: true, // ✅ FIX (handle proxy in production)
+      proxy: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
