@@ -11,6 +11,9 @@ const shareRoutes = require("./routes/share");
 
 const app = express();
 
+console.log("BACKEND_URL:", process.env.BACKEND_URL);
+console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+
 app.set("trust proxy", 1);
 
 // Connect to MongoDB

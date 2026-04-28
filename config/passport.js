@@ -9,9 +9,10 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      // callbackURL: "https://ai-chat-backend-5-5716.onrender.com/api/auth/google/callback",
-      callbackURL: process.env.BACKEND_URL + "/api/auth/google/callback",
+      callbackURL:
+        "https://ai-chat-backend-5-5716.onrender.com/api/auth/google/callback",
       passReqToCallback: true,
+      proxy: true, // ✅ FIX (handle proxy in production)
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
