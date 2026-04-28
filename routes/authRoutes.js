@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const { registerUser, loginUser } = require("../controllers/authController");
 
 // 🔥 ADD THIS
-const FRONTEND_URL = "https://ai-chat-frontend-theta.vercel.app";
+// const FRONTEND_URL = "https://ai-chat-frontend-theta.vercel.app";
 
 // Register route
 router.post("/register", registerUser);
@@ -27,7 +27,7 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: FRONTEND_URL, // ✅ FIX
+    failureRedirect: process.env.FRONTEND_URL,
     session: true,
   }),
   (req, res) => {
@@ -39,7 +39,7 @@ router.get(
 
     // ✅ FIX
     res.redirect(
-      `${FRONTEND_URL}/chat?token=${token}&name=${encodeURIComponent(name)}`,
+      `${process.env.FRONTEND_URL}/chat?token=${token}&name=${encodeURIComponent(name)}`,
     );
   },
 );
@@ -48,7 +48,7 @@ router.get(
 router.get("/logout", (req, res) => {
   req.logout(() => {
     // ✅ FIX
-    res.redirect(FRONTEND_URL);
+    res.redirect(process.env.FRONTEND_URL);
   });
 });
 

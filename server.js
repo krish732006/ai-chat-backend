@@ -9,8 +9,9 @@ const passport = require("./config/passport");
 const chatRoutes = require("./routes/chatRoutes");
 const shareRoutes = require("./routes/share");
 
-
 const app = express();
+
+app.set("trust proxy", 1);
 
 // Connect to MongoDB
 connectDB();
@@ -22,11 +23,11 @@ app.use(cors());
 
 // 🔐 Session setup (Google login mate)
 app.use(
-	session({
-		secret: "secretkey",
-		resave: false,
-		saveUninitialized: true,
-	})
+  session({
+    secret: "secretkey",
+    resave: false,
+    saveUninitialized: true,
+  }),
 );
 
 // 🔐 Passport initialize
@@ -40,18 +41,17 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/share", shareRoutes);
 
 app.get("/api/protected", protect, (req, res) => {
-	res.json({
-		message: "This is protected data 🔐",
-		user: req.user,
-	});
+  res.json({
+    message: "This is protected data 🔐",
+    user: req.user,
+  });
 });
 
 app.get("/", (req, res) => {
-	res.send("API is running...");
+  res.send("API is running...");
 });
 
 app.listen(PORT, async () => {
-	console.log(`Server running on port ${PORT}`);
-	console.log(`👉 Open in browser: http://localhost:${PORT}`);
-
+  console.log(`Server running on port ${PORT}`);
+  console.log(`👉 Open in browser: http://localhost:${PORT}`);
 });
