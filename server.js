@@ -8,6 +8,8 @@ const session = require("express-session");
 const passport = require("./config/passport");
 const chatRoutes = require("./routes/chatRoutes");
 const shareRoutes = require("./routes/share");
+const authRoutes = require("./routes/authRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 const app = express();
 
@@ -48,6 +50,7 @@ const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/share", shareRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.get("/api/protected", protect, (req, res) => {
   res.json({
