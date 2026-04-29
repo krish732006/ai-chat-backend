@@ -7,12 +7,16 @@ const mammoth = require("mammoth");
 
 router.post("/image", upload.single("image"), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
     const base64 = req.file.buffer.toString("base64");
 
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "openai/gpt-4o-mini", // vision supported
+        model: "openai/gpt-4o-mini:vision",
         messages: [
           {
             role: "user",
@@ -31,15 +35,16 @@ router.post("/image", upload.single("image"), async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
         },
       },
     );
 
-    const result = response.data.choices[0].message.content;
-
-    res.json({ result });
+    res.json({
+      result: response.data.choices[0].message.content,
+    });
   } catch (err) {
-    console.log(err.response?.data || err.message);
+    console.log("ERROR:", err.response?.data || err.message);
     res.status(500).json({ error: "Image processing failed" });
   }
 });
