@@ -16,17 +16,18 @@ router.post("/image", upload.single("image"), async (req, res) => {
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "openai/gpt-4o-mini:vision",
+        model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "user",
             content: [
-              { type: "text", text: "Explain this image" },
               {
-                type: "image_url",
-                image_url: {
-                  url: `data:${req.file.mimetype};base64,${base64}`,
-                },
+                type: "input_text",
+                text: "Explain this image",
+              },
+              {
+                type: "input_image",
+                image_url: `data:${req.file.mimetype};base64,${base64}`,
               },
             ],
           },
@@ -36,8 +37,6 @@ router.post("/image", upload.single("image"), async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://ai-chat-frontend-theta.vercel.app",
-          "X-Title": "AI Chat App",
         },
       },
     );
@@ -46,7 +45,7 @@ router.post("/image", upload.single("image"), async (req, res) => {
       result: response.data.choices[0].message.content,
     });
   } catch (err) {
-    console.log("ERROR:", err.response?.data || err.message);
+    console.log("🔥 FULL ERROR:", err.response?.data || err.message);
     res.status(500).json({ error: "Image processing failed" });
   }
 });
@@ -69,7 +68,7 @@ router.post("/file", upload.single("file"), async (req, res) => {
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "openai/gpt-3.5-turbo",
+        model: "mistralai/mistral-7b-instruct",
         messages: [
           {
             role: "user",
