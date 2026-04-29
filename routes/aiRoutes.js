@@ -36,6 +36,8 @@ router.post("/image", upload.single("image"), async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://ai-chat-frontend-theta.vercel.app",
+          "X-Title": "AI Chat App",
         },
       },
     );
@@ -67,7 +69,7 @@ router.post("/file", upload.single("file"), async (req, res) => {
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "mistralai/mistral-7b-instruct",
+        model: "openai/gpt-3.5-turbo",
         messages: [
           {
             role: "user",
