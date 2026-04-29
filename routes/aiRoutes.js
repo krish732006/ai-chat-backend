@@ -20,16 +20,7 @@ router.post("/image", upload.single("image"), async (req, res) => {
         messages: [
           {
             role: "user",
-            content: [
-              {
-                type: "input_text",
-                text: "Explain this image",
-              },
-              {
-                type: "input_image",
-                image_url: `data:${req.file.mimetype};base64,${base64}`,
-              },
-            ],
+            content: `Explain this image:\n[data:${req.file.mimetype};base64,${base64}]`,
           },
         ],
       },
