@@ -46,7 +46,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // routes
-const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/share", shareRoutes);
