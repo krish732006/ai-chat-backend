@@ -5,9 +5,14 @@ const axios = require("axios");
 const pdfParse = require("pdf-parse");
 const mammoth = require("mammoth");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
 // 🔥 Gemini setup
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 // ================= IMAGE ROUTE (GEMINI) =================
 router.post("/image", upload.single("image"), async (req, res) => {
@@ -16,29 +21,29 @@ router.post("/image", upload.single("image"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI API KEY missing" });
-    }
+    const base64Image = req.file.buffer.toString("base64");
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-001",
+    const result = await ai.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: "Explain this image in simple words" },
+            {
+              inlineData: {
+                mimeType: req.file.mimetype,
+                data: base64Image,
+              },
+            },
+          ],
+        },
+      ],
     });
 
-    const imagePart = {
-      inlineData: {
-        data: req.file.buffer.toString("base64"),
-        mimeType: req.file.mimetype,
-      },
-    };
-
-    const result = await model.generateContent([
-      "Explain this image in simple simple words",
-      imagePart,
-    ]);
-
-    const text = result.response.text();
-
-    res.json({ result: text });
+    res.json({
+      result: result.text,
+    });
   } catch (err) {
     console.log("🔥 GEMINI ERROR:", err);
     res.status(500).json({ error: "Image processing failed" });
