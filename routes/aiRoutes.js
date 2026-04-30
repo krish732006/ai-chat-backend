@@ -4,11 +4,11 @@ const upload = require("../middleware/upload");
 const axios = require("axios");
 const pdfParse = require("pdf-parse");
 const mammoth = require("mammoth");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+// const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { GoogleGenAI } = require("@google/genai");
 
 // 🔥 Gemini setup
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -42,7 +42,8 @@ router.post("/image", upload.single("image"), async (req, res) => {
     });
 
     res.json({
-      result: result.text,
+      result:
+        result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response",
     });
   } catch (err) {
     console.log("🔥 GEMINI ERROR:", err);
