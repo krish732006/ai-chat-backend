@@ -20,7 +20,9 @@ router.post("/image", upload.single("image"), async (req, res) => {
       return res.status(500).json({ error: "GEMINI API KEY missing" });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-latest",
+    });
 
     const imagePart = {
       inlineData: {
