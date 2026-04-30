@@ -21,7 +21,7 @@ router.post("/image", upload.single("image"), async (req, res) => {
     }
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-1.5-flash-001",
     });
 
     const imagePart = {
