@@ -3,6 +3,15 @@ const router = express.Router();
 const axios = require("axios");
 const Chat = require("../models/Chat");
 
+router.get("/", async (req, res) => {
+  try {
+    const chats = await Chat.find();
+    res.json({ messages: chats });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch chats" });
+  }
+});
+
 router.post("/", async (req, res) => {
   try {
     const { message, chatId, userId } = req.body;
@@ -122,7 +131,18 @@ router.post("/", async (req, res) => {
             userId,
             folder: "general",
             messages: [
-              ...(isContinue ? [] : [{ text: message, sender: "user", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]),
+              ...(isContinue
+                ? []
+                : [
+                    {
+                      text: message,
+                      sender: "user",
+                      time: new Date().toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                    },
+                  ]),
               { text: fullReply, sender: "ai" },
             ],
           });
