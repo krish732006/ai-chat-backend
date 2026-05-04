@@ -27,11 +27,12 @@ router.post("/image", upload.single("image"), async (req, res) => {
       "https://openrouter.ai/api/v1/chat/completions",
       {
         model: "openai/gpt-4o-mini",
+        max_tokens: 200,
         messages: [
           {
             role: "user",
             content: [
-              { type: "text", text: "Explain this image" },
+              { type: "text", text: "Explain this image simply" },
               {
                 type: "image_url",
                 image_url: {
@@ -45,6 +46,7 @@ router.post("/image", upload.single("image"), async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
         },
       },
     );
@@ -53,8 +55,8 @@ router.post("/image", upload.single("image"), async (req, res) => {
       result: response.data.choices[0].message.content,
     });
   } catch (err) {
-    console.log("IMAGE ERROR:", err.response?.data || err.message);
-    res.status(500).json({ error: "Image failed" });
+    console.log("🔥 IMAGE ERROR:", err.response?.data || err.message);
+    res.status(500).json({ error: "Image processing failed" });
   }
 });
 
