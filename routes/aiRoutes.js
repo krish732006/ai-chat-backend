@@ -23,6 +23,9 @@ router.post("/image", upload.single("image"), async (req, res) => {
 
     const base64 = req.file.buffer.toString("base64");
 
+    const imageBase64 = `data:${req.file.mimetype};base64,${base64}`;
+
+    // 🔥 OPENROUTER CALL
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -36,7 +39,7 @@ router.post("/image", upload.single("image"), async (req, res) => {
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:${req.file.mimetype};base64,${base64}`,
+                  url: imageBase64,
                 },
               },
             ],
@@ -51,8 +54,29 @@ router.post("/image", upload.single("image"), async (req, res) => {
       },
     );
 
+    const aiText =
+      response.data.choices?.[0]?.message?.content || "No response";
+
+    // ✅ SAVE TO DB
+    await Chat.create({
+      userId: req.userId,
+      messages: [
+        {
+          type: "image", // 🔥 IMPORTANT
+          image: imageBase64,
+          sender: "user",
+        },
+        {
+          text: aiText,
+          sender: "ai",
+        },
+      ],
+    });
+
+    // ✅ RESPONSE SEND
     res.json({
-      result: response.data.choices[0].message.content,
+      result: aiText,
+      image: imageBase64, // 🔥 frontend mate
     });
   } catch (err) {
     console.log("🔥 IMAGE ERROR:", err.response?.data || err.message);

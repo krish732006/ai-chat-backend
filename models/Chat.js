@@ -10,6 +10,7 @@ const chatSchema = new mongoose.Schema(
       {
         text: String,
         sender: String, // user / ai
+        image: String, // Store image as base64 string
         time: String,
       },
     ],
