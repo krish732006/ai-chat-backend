@@ -7,6 +7,7 @@ const mammoth = require("mammoth");
 // const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { GoogleGenAI } = require("@google/genai");
 const Chat = require("../models/Chat");
+const authMiddleware = require("../middleware/authMiddleware");
 
 // 🔥 Gemini setup
 // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -16,77 +17,82 @@ const ai = new GoogleGenAI({
 });
 
 // ================= IMAGE ROUTE (GEMINI) =================
-router.post("/image", upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
+router.post(
+  "/image",
+  authMiddleware,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
 
-    const base64 = req.file.buffer.toString("base64");
+      const base64 = req.file.buffer.toString("base64");
 
-    const imageBase64 = `data:${req.file.mimetype};base64,${base64}`;
+      const imageBase64 = `data:${req.file.mimetype};base64,${base64}`;
 
-    // 🔥 OPENROUTER CALL
-    const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: "openai/gpt-4o-mini",
-        max_tokens: 200,
+      // 🔥 OPENROUTER CALL
+      const response = await axios.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          model: "openai/gpt-4o-mini",
+          max_tokens: 200,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Explain this image simply" },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: imageBase64,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const aiText =
+        response.data.choices?.[0]?.message?.content || "No response";
+
+      // ✅ SAVE TO DB
+      await Chat.create({
+        userId: req.userId,
         messages: [
           {
-            role: "user",
-            content: [
-              { type: "text", text: "Explain this image simply" },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageBase64,
-                },
-              },
-            ],
+            type: "image", // 🔥 IMPORTANT
+            image: imageBase64,
+            sender: "user",
+          },
+          {
+            text: aiText,
+            sender: "ai",
           },
         ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      },
-    );
+      });
 
-    const aiText =
-      response.data.choices?.[0]?.message?.content || "No response";
-
-    // ✅ SAVE TO DB
-    await Chat.create({
-      userId: req.userId,
-      messages: [
-        {
-          type: "image", // 🔥 IMPORTANT
-          image: imageBase64,
-          sender: "user",
-        },
-        {
-          text: aiText,
-          sender: "ai",
-        },
-      ],
-    });
-
-    // ✅ RESPONSE SEND
-    res.json({
-      result: aiText,
-      image: imageBase64, // 🔥 frontend mate
-    });
-  } catch (err) {
-    console.log("🔥 IMAGE ERROR:", err.response?.data || err.message);
-    res.status(500).json({ error: "Image processing failed" });
-  }
-});
+      // ✅ RESPONSE SEND
+      res.json({
+        result: aiText,
+        image: imageBase64, // 🔥 frontend mate
+      });
+    } catch (err) {
+      console.log("🔥 IMAGE ERROR:", err.response?.data || err.message);
+      res.status(500).json({ error: "Image processing failed" });
+    }
+  },
+);
 
 // ================= FILE ROUTE =================
-router.post("/file", upload.single("file"), async (req, res) => {
+router.post("/file", authMiddleware, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
