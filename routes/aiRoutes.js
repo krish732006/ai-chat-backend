@@ -21,33 +21,40 @@ router.post("/image", upload.single("image"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const base64Image = req.file.buffer.toString("base64");
+    const base64 = req.file.buffer.toString("base64");
 
-    const result = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: "Explain this image in simple words" },
-            {
-              inlineData: {
-                mimeType: req.file.mimetype,
-                data: base64Image,
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "openai/gpt-4o-mini",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Explain this image" },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${req.file.mimetype};base64,${base64}`,
+                },
               },
-            },
-          ],
+            ],
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         },
-      ],
-    });
+      },
+    );
 
     res.json({
-      result:
-        result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response",
+      result: response.data.choices[0].message.content,
     });
   } catch (err) {
-    console.log("🔥 GEMINI ERROR:", err);
-    res.status(500).json({ error: "Image processing failed" });
+    console.log("IMAGE ERROR:", err.response?.data || err.message);
+    res.status(500).json({ error: "Image failed" });
   }
 });
 
