@@ -6,6 +6,7 @@ const pdfParse = require("pdf-parse");
 const mammoth = require("mammoth");
 // const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { GoogleGenAI } = require("@google/genai");
+const Chat = require("../models/Chat");
 
 // 🔥 Gemini setup
 // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
