@@ -63,6 +63,8 @@ router.post(
       // const aiText =
       //   response.data.choices?.[0]?.message?.content || "No response";
 
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
         contents: [
