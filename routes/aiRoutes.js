@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
-const axios = require("axios");
+// const axios = require("axios");
 const pdfParse = require("pdf-parse");
 const mammoth = require("mammoth");
 // const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -142,33 +142,46 @@ router.post(
         return res.status(400).json({ error: "Only PDF/DOCX allowed" });
       }
 
-      // 🔥 limit text (avoid credits issue)
+      // 🔥 text limit (important)
       const trimmedText = text.slice(0, 3000);
 
-      const response = await axios.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          model: "openai/gpt-4o-mini",
-          max_tokens: 200,
-          messages: [
-            {
-              role: "user",
-              content: `Summarize this document:\n${trimmedText}`,
-            },
-          ],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      // ✅ GEMINI CALL (FREE)
+      const response = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Summarize this document in simple words:\n\n${trimmedText}`,
+              },
+            ],
           },
-        },
-      );
+        ],
+      });
+
+      const aiText = response.text || "No response";
+
+      // ✅ SAVE TO DB (optional but recommended)
+      await Chat.create({
+        userId: req.userId,
+        messages: [
+          {
+            text: "File uploaded",
+            sender: "user",
+          },
+          {
+            text: aiText,
+            sender: "ai",
+          },
+        ],
+      });
 
       res.json({
-        result: response.data.choices[0].message.content,
+        result: aiText,
       });
     } catch (err) {
-      console.log("🔥 FILE ERROR:", err.response?.data || err.message);
+      console.log("🔥 FILE ERROR:", err);
       res.status(500).json({ error: "File processing failed" });
     }
   },
