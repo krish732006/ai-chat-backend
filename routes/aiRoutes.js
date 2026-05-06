@@ -144,14 +144,14 @@ router.post(
       console.log("🔥 IMAGE ERROR:", err.response?.data || err.message);
 
       // 🔥 GEMINI QUOTA ERROR HANDLE
-      if (
-        err.response?.status === 429 ||
-        err.message?.toLowerCase().includes("quota")
-      ) {
-        return res.status(429).json({
-          error: "AI quota exceeded. Try again later or upgrade plan.",
-        });
-      }
+      // if (
+      //   err.response?.status === 429 ||
+      //   err.message?.toLowerCase().includes("quota")
+      // ) {
+      //   return res.status(429).json({
+      //     error: "AI quota exceeded. Try again later or upgrade plan.",
+      //   });
+      // }
 
       res.status(500).json({
         error: err.message || "Image processing failed",
