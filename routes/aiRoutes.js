@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
-// const axios = require("axios");
+const axios = require("axios");
 const pdfParse = require("pdf-parse");
 const mammoth = require("mammoth");
 // const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -31,59 +31,93 @@ router.post(
 
       const imageBase64 = `data:${req.file.mimetype};base64,${base64}`;
 
-      // 🔥 OPENROUTER CALL
-      // const response = await axios.post(
-      //   "https://openrouter.ai/api/v1/chat/completions",
-      //   {
-      //     model: "openai/gpt-4o-mini",
-      //     max_tokens: 200,
-      //     messages: [
-      //       {
-      //         role: "user",
-      //         content: [
-      //           { type: "text", text: "Explain this image simply" },
-      //           {
-      //             type: "image_url",
-      //             image_url: {
-      //               url: imageBase64,
-      //             },
-      //           },
-      //         ],
-      //       },
-      //     ],
-      //   },
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      //       "Content-Type": "application/json",
-      //     },
-      //   },
-      // );
-
-      // const aiText =
-      //   response.data.choices?.[0]?.message?.content || "No response";
-
       await new Promise((resolve) => setTimeout(resolve, 4000));
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: "Explain this image simply" },
-              {
-                inlineData: {
-                  mimeType: req.file.mimetype,
-                  data: base64,
-                },
-              },
-            ],
-          },
-        ],
-      });
+      // const response = await ai.models.generateContent({
+      //   model: "gemini-2.0-flash",
+      //   contents: [
+      //     {
+      //       role: "user",
+      //       parts: [
+      //         { text: "Explain this image simply" },
+      //         {
+      //           inlineData: {
+      //             mimeType: req.file.mimetype,
+      //             data: base64,
+      //           },
+      //         },
+      //       ],
+      //     },
+      //   ],
+      // });
 
-      const aiText = response.text || "No response";
+      // const aiText = response.text || "No response";
+
+      let aiText = "";
+
+      try {
+        // 🔥 GEMINI TRY
+        const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: "Explain this image simply" },
+                {
+                  inlineData: {
+                    mimeType: req.file.mimetype,
+                    data: base64,
+                  },
+                },
+              ],
+            },
+          ],
+        });
+
+        aiText = response.text || "No response";
+      } catch (err) {
+        console.log("⚠️ Gemini failed → switching to OpenRouter");
+
+        try {
+          const axios = require("axios");
+
+          const response = await axios.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+              model: "openai/gpt-4o-mini",
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: "Explain this image simply" },
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: imageBase64,
+                      },
+                    },
+                  ],
+                },
+              ],
+              max_tokens: 200,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+
+          aiText =
+            response.data.choices?.[0]?.message?.content || "No response";
+        } catch (fallbackErr) {
+          console.log("❌ OpenRouter also failed:", fallbackErr.message);
+
+          aiText = "⚠️ AI service temporarily unavailable. Try again later.";
+        }
+      }
 
       // ✅ SAVE TO DB
       await Chat.create({
@@ -110,7 +144,10 @@ router.post(
       console.log("🔥 IMAGE ERROR:", err.response?.data || err.message);
 
       // 🔥 GEMINI QUOTA ERROR HANDLE
-      if (err.message.includes("429") || err.message.includes("quota")) {
+      if (
+        err.response?.status === 429 ||
+        err.message?.toLowerCase().includes("quota")
+      ) {
         return res.status(429).json({
           error: "AI quota exceeded. Try again later or upgrade plan.",
         });
