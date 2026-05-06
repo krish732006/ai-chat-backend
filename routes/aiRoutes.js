@@ -63,7 +63,7 @@ router.post(
       // const aiText =
       //   response.data.choices?.[0]?.message?.content || "No response";
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 4000));
 
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
@@ -108,7 +108,17 @@ router.post(
       });
     } catch (err) {
       console.log("🔥 IMAGE ERROR:", err.response?.data || err.message);
-      res.status(500).json({ error: "Image processing failed" });
+
+      // 🔥 GEMINI QUOTA ERROR HANDLE
+      if (err.message.includes("429") || err.message.includes("quota")) {
+        return res.status(429).json({
+          error: "AI quota exceeded. Try again later or upgrade plan.",
+        });
+      }
+
+      res.status(500).json({
+        error: err.message || "Image processing failed",
+      });
     }
   },
 );
