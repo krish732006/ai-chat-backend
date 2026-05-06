@@ -85,7 +85,8 @@ router.post(
           const response = await axios.post(
             "https://openrouter.ai/api/v1/chat/completions",
             {
-              model: "openai/gpt-4o-mini",
+              // model: "openai/gpt-4o-mini",
+              model: "meta-llama/llama-3-8b-instruct:free",
               messages: [
                 {
                   role: "user",
