@@ -231,32 +231,48 @@ router.put("/pin/:chatId", async (req, res) => {
   }
 });
 
+// router.post("/title", async (req, res) => {
+//   try {
+//     const { message } = req.body;
+
+//     const response = await axios.post(
+//       "https://openrouter.ai/api/v1/chat/completions",
+//       {
+//         model: "openai/gpt-3.5-turbo",
+//         messages: [
+//           {
+//             role: "user",
+//             content: `Generate a very short 3-5 word title for this message: "${message}". Only return title.`,
+//           },
+//         ],
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+//         },
+//       },
+//     );
+
+//     const title = response.data.choices[0].message.content;
+
+//     res.json({ title });
+//   } catch (err) {
+//     res.status(500).json({ error: "Title error" });
+//   }
+// });
+
 router.post("/title", async (req, res) => {
   try {
     const { message } = req.body;
 
-    const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: "openai/gpt-3.5-turbo",
-        messages: [
-          {
-            role: "user",
-            content: `Generate a very short 3-5 word title for this message: "${message}". Only return title.`,
-          },
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        },
-      },
-    );
+    // ❌ REMOVE AI CALL
 
-    const title = response.data.choices[0].message.content;
+    // ✅ SIMPLE TITLE GENERATE
+    const title = message.split(" ").slice(0, 5).join(" ");
 
     res.json({ title });
   } catch (err) {
+    console.log("TITLE ERROR:", err.message);
     res.status(500).json({ error: "Title error" });
   }
 });
