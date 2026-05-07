@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const axios = require("axios");
+// const axios = require("axios");
+const fetch = require("node-fetch");
 const Chat = require("../models/Chat");
 
 router.get("/", async (req, res) => {
@@ -45,33 +46,154 @@ router.post("/", async (req, res) => {
     }
 
     // 🔥 AI CALL (STREAM)
-    const response = await axios({
-      method: "post",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      data: {
-        model: "openai/gpt-3.5-turbo",
-        messages: [
-          ...history,
-          ...(isContinue ? [] : [{ role: "user", content: message }]),
-          { role: "user", content: userMessage },
-        ],
-        stream: true,
-      },
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      responseType: "stream",
-    });
+    // const response = await axios({
+    //   method: "post",
+    //   url: "https://openrouter.ai/api/v1/chat/completions",
+    //   data: {
+    //     model: "openai/gpt-3.5-turbo",
+    //     messages: [
+    //       ...history,
+    //       ...(isContinue ? [] : [{ role: "user", content: message }]),
+    //       { role: "user", content: userMessage },
+    //     ],
+    //     stream: true,
+    //   },
+    //   headers: {
+    //     Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+    //     "Content-Type": "application/json",
+    //   },
+    //   responseType: "stream",
+    // });
 
-    // 🔥 headers
+    // // 🔥 headers
+    // res.setHeader("Content-Type", "text/plain");
+    // res.setHeader("Transfer-Encoding", "chunked");
+
+    // let fullReply = ""; // ✅ IMPORTANT
+
+    // // 🔥 STREAM HANDLE
+    // response.data.on("data", (chunk) => {
+    //   const lines = chunk.toString().split("\n");
+
+    //   for (let line of lines) {
+    //     if (!line.startsWith("data: ")) continue;
+
+    //     const jsonStr = line.replace("data: ", "").trim();
+
+    //     if (!jsonStr || jsonStr === "[DONE]") continue;
+
+    //     try {
+    //       const parsed = JSON.parse(jsonStr);
+
+    //       const choice = parsed?.choices?.[0];
+    //       if (!choice) continue;
+
+    //       const text = choice?.delta?.content || choice?.message?.content || "";
+
+    //       if (text) {
+    //         fullReply += text; // ✅ collect full text
+    //         res.write(text); // ✅ send to frontend
+    //       }
+    //     } catch (err) {
+    //       // ignore bad chunks
+    //     }
+    //   }
+    // });
+
+    // // 🔥 STREAM END → SAVE TO DB
+    // response.data.on("end", async () => {
+    //   try {
+    //     let savedChat;
+
+    //     if (chat) {
+    //       if (!isContinue) {
+    //         chat.messages.push({
+    //           text: message,
+    //           sender: "user",
+    //           time: new Date().toLocaleTimeString([], {
+    //             hour: "2-digit",
+    //             minute: "2-digit",
+    //           }),
+    //         });
+    //       }
+    //       chat.messages.push({
+    //         text: fullReply,
+    //         sender: "ai",
+    //         time: new Date().toLocaleTimeString([], {
+    //           hour: "2-digit",
+    //           minute: "2-digit",
+    //         }),
+    //       });
+
+    //       await chat.save();
+    //       savedChat = chat;
+    //     } else {
+    //       savedChat = new Chat({
+    //         userId,
+    //         folder: "general",
+    //         messages: [
+    //           ...(isContinue
+    //             ? []
+    //             : [
+    //                 {
+    //                   text: message,
+    //                   sender: "user",
+    //                   time: new Date().toLocaleTimeString([], {
+    //                     hour: "2-digit",
+    //                     minute: "2-digit",
+    //                   }),
+    //                 },
+    //               ]),
+    //           { text: fullReply, sender: "ai" },
+    //         ],
+    //       });
+
+    //       await savedChat.save();
+    //     }
+
+    //     // 🔥 send chatId at end (optional future use)
+    //     // res.write(JSON.stringify({ chatId: savedChat._id }));
+    //     res.write(`\n__CHAT_ID__:${savedChat._id}`);
+
+    //     res.end();
+    //   } catch (err) {
+    //     console.log("DB save error:", err.message);
+    //     res.end();
+    //   }
+    // });
+
+    // // 🔥 ERROR HANDLE
+    // response.data.on("error", (err) => {
+    //   console.log("Stream error:", err.message);
+    //   res.end();
+    // });
+
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-3.5-turbo",
+          messages: [
+            ...history,
+            ...(isContinue ? [] : [{ role: "user", content: message }]),
+            { role: "user", content: userMessage },
+          ],
+          stream: true,
+        }),
+      },
+    );
+
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    let fullReply = ""; // ✅ IMPORTANT
+    let fullReply = "";
 
-    // 🔥 STREAM HANDLE
-    response.data.on("data", (chunk) => {
+    response.body.on("data", (chunk) => {
       const lines = chunk.toString().split("\n");
 
       for (let line of lines) {
@@ -84,46 +206,29 @@ router.post("/", async (req, res) => {
         try {
           const parsed = JSON.parse(jsonStr);
 
-          const choice = parsed?.choices?.[0];
-          if (!choice) continue;
-
-          const text = choice?.delta?.content || choice?.message?.content || "";
+          const text =
+            parsed?.choices?.[0]?.delta?.content ||
+            parsed?.choices?.[0]?.message?.content ||
+            "";
 
           if (text) {
-            fullReply += text; // ✅ collect full text
-            res.write(text); // ✅ send to frontend
+            fullReply += text;
+            res.write(text);
           }
-        } catch (err) {
-          // ignore bad chunks
-        }
+        } catch (err) {}
       }
     });
 
-    // 🔥 STREAM END → SAVE TO DB
-    response.data.on("end", async () => {
+    response.body.on("end", async () => {
       try {
         let savedChat;
 
         if (chat) {
           if (!isContinue) {
-            chat.messages.push({
-              text: message,
-              sender: "user",
-              time: new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-            });
+            chat.messages.push({ text: message, sender: "user" });
           }
-          chat.messages.push({
-            text: fullReply,
-            sender: "ai",
-            time: new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          });
 
+          chat.messages.push({ text: fullReply, sender: "ai" });
           await chat.save();
           savedChat = chat;
         } else {
@@ -131,18 +236,7 @@ router.post("/", async (req, res) => {
             userId,
             folder: "general",
             messages: [
-              ...(isContinue
-                ? []
-                : [
-                    {
-                      text: message,
-                      sender: "user",
-                      time: new Date().toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }),
-                    },
-                  ]),
+              { text: message, sender: "user" },
               { text: fullReply, sender: "ai" },
             ],
           });
@@ -150,21 +244,12 @@ router.post("/", async (req, res) => {
           await savedChat.save();
         }
 
-        // 🔥 send chatId at end (optional future use)
-        // res.write(JSON.stringify({ chatId: savedChat._id }));
         res.write(`\n__CHAT_ID__:${savedChat._id}`);
-
         res.end();
       } catch (err) {
         console.log("DB save error:", err.message);
         res.end();
       }
-    });
-
-    // 🔥 ERROR HANDLE
-    response.data.on("error", (err) => {
-      console.log("Stream error:", err.message);
-      res.end();
     });
   } catch (error) {
     console.log(error.response?.data || error.message);
