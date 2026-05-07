@@ -185,7 +185,7 @@ router.post("/", async (req, res) => {
             ...(isContinue ? [] : [{ role: "user", content: message }]),
             { role: "user", content: userMessage },
           ],
-          stream: true,
+          stream: false,
         }),
       },
     );
