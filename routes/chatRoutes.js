@@ -175,6 +175,8 @@ router.post("/", async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "http://localhost:3000", // 🔥 ADD THIS
+          "X-Title": "AI Chat App", // 🔥 ADD THIS
         },
         body: JSON.stringify({
           model: "openai/gpt-3.5-turbo",
