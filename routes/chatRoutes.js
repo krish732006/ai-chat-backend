@@ -193,7 +193,11 @@ router.post("/", async (req, res) => {
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    const data = await response.json();
+    // const data = await response.json();
+    const text = await response.text();
+    console.log("RAW:", text);
+
+    const data = JSON.parse(text);
 
     const fullReply = data?.choices?.[0]?.message?.content || "No response";
 
