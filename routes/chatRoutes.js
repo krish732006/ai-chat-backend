@@ -193,8 +193,15 @@ router.post("/", async (req, res) => {
 
     let fullReply = "";
 
-    response.body.on("data", (chunk) => {
-      const lines = chunk.toString().split("\n");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split("\n");
 
       for (let line of lines) {
         if (!line.startsWith("data: ")) continue;
@@ -217,40 +224,34 @@ router.post("/", async (req, res) => {
           }
         } catch (err) {}
       }
-    });
+    }
 
-    response.body.on("end", async () => {
-      try {
-        let savedChat;
+    // 🔥 SAVE TO DB (same as before)
+    let savedChat;
 
-        if (chat) {
-          if (!isContinue) {
-            chat.messages.push({ text: message, sender: "user" });
-          }
-
-          chat.messages.push({ text: fullReply, sender: "ai" });
-          await chat.save();
-          savedChat = chat;
-        } else {
-          savedChat = new Chat({
-            userId,
-            folder: "general",
-            messages: [
-              { text: message, sender: "user" },
-              { text: fullReply, sender: "ai" },
-            ],
-          });
-
-          await savedChat.save();
-        }
-
-        res.write(`\n__CHAT_ID__:${savedChat._id}`);
-        res.end();
-      } catch (err) {
-        console.log("DB save error:", err.message);
-        res.end();
+    if (chat) {
+      if (!isContinue) {
+        chat.messages.push({ text: message, sender: "user" });
       }
-    });
+
+      chat.messages.push({ text: fullReply, sender: "ai" });
+      await chat.save();
+      savedChat = chat;
+    } else {
+      savedChat = new Chat({
+        userId,
+        folder: "general",
+        messages: [
+          { text: message, sender: "user" },
+          { text: fullReply, sender: "ai" },
+        ],
+      });
+
+      await savedChat.save();
+    }
+
+    res.write(`\n__CHAT_ID__:${savedChat._id}`);
+    res.end();
   } catch (error) {
     console.log(error.response?.data || error.message);
     res.end();
