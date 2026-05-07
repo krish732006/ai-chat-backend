@@ -179,7 +179,7 @@ router.post("/", async (req, res) => {
           "X-Title": "AI Chat App", // 🔥 ADD THIS
         },
         body: JSON.stringify({
-          model: "openai/gpt-3.5-turbo",
+          model: "openai/gpt-4o-mini",
           messages: [
             ...history,
             ...(isContinue ? [] : [{ role: "user", content: message }]),
@@ -193,13 +193,25 @@ router.post("/", async (req, res) => {
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
 
+    console.log("STATUS:", response.status);
     // const data = await response.json();
     const text = await response.text();
-    console.log("RAW:", text);
+    console.log("RAW RESPONSE:", text);
 
-    const data = JSON.parse(text);
+    let data;
 
-    const fullReply = data?.choices?.[0]?.message?.content || "No response";
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      console.log("JSON parse error");
+      return res.end("AI Error ❌");
+    }
+
+    const fullReply =
+      data?.choices?.[0]?.message?.content ||
+      data?.choices?.[0]?.delta?.content ||
+      data?.error?.message || // 🔥 IMPORTANT
+      "No response";
 
     // 🔥 send to frontend
     res.write(fullReply);
