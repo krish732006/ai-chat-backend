@@ -193,38 +193,12 @@ router.post("/", async (req, res) => {
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    let fullReply = "";
+    const data = await response.json();
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
+    const fullReply = data?.choices?.[0]?.message?.content || "No response";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value);
-      const parts = chunk.split("data: ");
-
-      for (let part of parts) {
-        if (!part.trim() || part.trim() === "[DONE]") continue;
-
-        try {
-          const parsed = JSON.parse(part.trim());
-
-          const text =
-            parsed?.choices?.[0]?.delta?.content ||
-            parsed?.choices?.[0]?.message?.content ||
-            "";
-
-          if (text) {
-            fullReply += text;
-            res.write(text);
-          }
-        } catch (err) {
-          // ignore partial chunks
-        }
-      }
-    }
+    // 🔥 send to frontend
+    res.write(fullReply);
 
     // 🔥 SAVE TO DB (same as before)
     let savedChat;
