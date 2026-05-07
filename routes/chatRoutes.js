@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 // const axios = require("axios");
-const fetch = require("node-fetch");
+// const fetch = require("node-fetch");
 const Chat = require("../models/Chat");
 
 router.get("/", async (req, res) => {
