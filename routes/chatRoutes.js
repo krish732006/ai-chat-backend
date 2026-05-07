@@ -203,17 +203,13 @@ router.post("/", async (req, res) => {
       if (done) break;
 
       const chunk = decoder.decode(value);
-      const lines = chunk.split("\n");
+      const parts = chunk.split("data: ");
 
-      for (let line of lines) {
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.replace("data: ", "").trim();
-
-        if (!jsonStr || jsonStr === "[DONE]") continue;
+      for (let part of parts) {
+        if (!part.trim() || part.trim() === "[DONE]") continue;
 
         try {
-          const parsed = JSON.parse(jsonStr);
+          const parsed = JSON.parse(part.trim());
 
           const text =
             parsed?.choices?.[0]?.delta?.content ||
@@ -224,7 +220,9 @@ router.post("/", async (req, res) => {
             fullReply += text;
             res.write(text);
           }
-        } catch (err) {}
+        } catch (err) {
+          // ignore partial chunks
+        }
       }
     }
 
